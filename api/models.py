@@ -160,6 +160,7 @@ class Registration(models.Model):
     animal_owner      = models.CharField(max_length=100)
     animal_vaccinated = models.CharField(max_length=20)
     body_part         = models.TextField()
+    queue_number      = models.CharField(max_length=10, blank=True, null=True)
     created_at        = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self):
@@ -167,7 +168,6 @@ class Registration(models.Model):
 
 
 # ── Supplier ──────────────────────────────────────────────────────────────────
-# Web: Suppliers.jsx
 class Supplier(models.Model):
     STATUS_CHOICES = [
         ('Active',   'Active'),
@@ -177,7 +177,7 @@ class Supplier(models.Model):
     contact        = models.EmailField(max_length=200, blank=True, null=True)
     phone          = models.CharField(max_length=50, blank=True, null=True)
     address        = models.TextField(blank=True, null=True)
-    vaccines       = models.TextField(blank=True, null=True)   # comma-separated vaccine names
+    vaccines       = models.TextField(blank=True, null=True)
     status         = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
     lead_time_days = models.IntegerField(default=0)
     notes          = models.TextField(blank=True, null=True)
@@ -188,7 +188,6 @@ class Supplier(models.Model):
 
 
 # ── VaccineOrder ──────────────────────────────────────────────────────────────
-# Web: VaccineOrders.jsx
 class VaccineOrder(models.Model):
     STATUS_CHOICES = [
         ('Pending',   'Pending'),
@@ -209,7 +208,7 @@ class VaccineOrder(models.Model):
         null=True, blank=True,
         related_name='orders'
     )
-    amount         = models.IntegerField(default=0)           # number of doses
+    amount         = models.IntegerField(default=0)
     price_per_dose = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total          = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     status         = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
