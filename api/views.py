@@ -69,20 +69,32 @@ class VaccineOrderViewSet(viewsets.ModelViewSet):
 def protected_view(request):
     return Response({"message": "Authorized — you are logged in!"})
 
+from django.contrib.auth import authenticate
 
-# ── Login ─────────────────────────────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
+
+    # ── Check Django admin user first ────────────────────────────
+    user = authenticate(username=username, password=password)
+    if user:
+        return Response({
+            'message': 'Login successful',
+            'username': user.username,
+            'role': 'admin'
+        })
+
+    # ── Check Patient model ───────────────────────────────────────
     try:
         patient = Patient.objects.get(username=username, password=password)
         patient.last_login = timezone.now()
         patient.save()
         return Response({
             'message': 'Login successful',
-            'user': PatientSerializer(patient).data
+            'user': PatientSerializer(patient).data,
+            'role': 'patient'
         })
     except Patient.DoesNotExist:
         return Response(
