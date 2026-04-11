@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from .models import (
     Vaccine, Announcement, Patient,
@@ -16,6 +16,7 @@ from .serializers import (
     DoseScheduleSerializer, RegistrationSerializer,
     SupplierSerializer, VaccineOrderSerializer,
 )
+
 
 class VaccineViewSet(viewsets.ModelViewSet):
     queryset         = Vaccine.objects.all()
@@ -71,6 +72,7 @@ def protected_view(request):
 
 # ── Login ─────────────────────────────────────────────────────────────────────
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -91,6 +93,7 @@ def login_view(request):
 
 # ── Register ──────────────────────────────────────────────────────────────────
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -107,10 +110,58 @@ def register_view(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     patient = Patient.objects.create(
-        username=username, password=password,
-        name=name, role='patient'
+        username=username,
+        password=password,
+        name=name,
+        role='patient'
     )
     return Response({
         'message': 'Registration successful',
         'user': PatientSerializer(patient).data
     }, status=status.HTTP_201_CREATED)
+
+
+# ── Patient Registration (with queue number) ──────────────────────────────────
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def submit_registration(request):
+    username = request.data.get('username')
+
+    # Get patient if logged in
+    patient = None
+    if username:
+        try:
+            patient = Patient.objects.get(username=username)
+        except Patient.DoesNotExist:
+            pass
+
+    # Generate sequential queue number
+    count = Registration.objects.count()
+    queue_number = f'Q-{str(count + 1).zfill(3)}'
+
+    data = request.data.copy()
+    serializer = RegistrationSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save(
+            patient=patient,
+            queue_number=queue_number
+        )
+        return Response({
+            'message': 'Registration submitted successfully',
+            'queue_number': queue_number,
+            'registration': serializer.data
+        }, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ── Get registrations by patient ──────────────────────────────────────────────
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_patient_registrations(request, username):
+    try:
+        patient = Patient.objects.get(username=username)
+        regs = Registration.objects.filter(patient=patient).order_by('created_at')
+        serializer = RegistrationSerializer(regs, many=True)
+        return Response(serializer.data)
+    except Patient.DoesNotExist:
+        return Response({'error': 'Patient not found'}, status=status.HTTP_404_NOT_FOUND)
