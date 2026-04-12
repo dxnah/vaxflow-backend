@@ -1,18 +1,20 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.response import Response
-from django.utils import timezone
+from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.utils import timezone
 from .models import (
-    Vaccine, VaccineBatch, Announcement, Patient,
+    Vaccine, Announcement, Patient,
     Notification, VaccineUsageReport, StockLevelReport,
     VaccinationHistory, DoseSchedule, Registration,
     Supplier, VaccineOrder,
 )
 from .serializers import (
-    VaccineSerializer, VaccineBatchSerializer, AnnouncementSerializer,
-    PatientSerializer, NotificationSerializer, VaccineUsageReportSerializer,
+    VaccineSerializer, AnnouncementSerializer, PatientSerializer,
+    NotificationSerializer, VaccineUsageReportSerializer,
     StockLevelReportSerializer, VaccinationHistorySerializer,
     DoseScheduleSerializer, RegistrationSerializer,
     SupplierSerializer, VaccineOrderSerializer,
@@ -22,24 +24,6 @@ from .serializers import (
 class VaccineViewSet(viewsets.ModelViewSet):
     queryset         = Vaccine.objects.all()
     serializer_class = VaccineSerializer
-
-    # POST  /api/vaccines/{id}/batches/  — add a batch to this vaccine
-    @action(detail=True, methods=['post'], url_path='batches')
-    def add_batch(self, request, pk=None):
-        vaccine = self.get_object()
-        data = request.data.copy()
-        data['vaccine'] = vaccine.id
-        serializer = VaccineBatchSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class VaccineBatchViewSet(viewsets.ModelViewSet):
-    queryset         = VaccineBatch.objects.all()
-    serializer_class = VaccineBatchSerializer
-
 
 class AnnouncementViewSet(viewsets.ModelViewSet):
     queryset         = Announcement.objects.all()
@@ -69,10 +53,6 @@ class DoseScheduleViewSet(viewsets.ModelViewSet):
     queryset         = DoseSchedule.objects.all()
     serializer_class = DoseScheduleSerializer
 
-class RegistrationViewSet(viewsets.ModelViewSet):
-    queryset         = Registration.objects.all()
-    serializer_class = RegistrationSerializer
-
 class SupplierViewSet(viewsets.ModelViewSet):
     queryset         = Supplier.objects.all()
     serializer_class = SupplierSerializer
@@ -82,6 +62,33 @@ class VaccineOrderViewSet(viewsets.ModelViewSet):
     serializer_class = VaccineOrderSerializer
 
 
+class RegistrationViewSet(viewsets.ModelViewSet):
+    queryset         = Registration.objects.all()
+    serializer_class = RegistrationSerializer
+
+    def get_queryset(self):
+        token_key = self.request.META.get('HTTP_AUTHORIZATION', '').replace('Token ', '')
+        if not token_key:
+            return Registration.objects.all()
+        try:
+            token = Token.objects.get(key=token_key)
+            patient_id = token.user.username.split('_')[-1]
+            patient = Patient.objects.get(id=patient_id)
+            return Registration.objects.filter(patient=patient)
+        except Exception:
+            return Registration.objects.all()
+
+
+# ── Admin Users — staff only ──────────────────────────────────────────────────
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_users_view(request):
+    users = User.objects.filter(is_staff=True).values(
+        'id', 'username', 'email', 'is_staff', 'is_superuser', 'last_login'
+    )
+    return Response(list(users))
+
+
 # ── Protected endpoint ────────────────────────────────────────────────────────
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -89,28 +96,38 @@ def protected_view(request):
     return Response({"message": "Authorized — you are logged in!"})
 
 
+# ── Login ─────────────────────────────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
 
+    # Check Django admin user first
     user = authenticate(username=username, password=password)
     if user:
+        token, _ = Token.objects.get_or_create(user=user)
         return Response({
-            'message': 'Login successful',
+            'message':  'Login successful',
+            'token':    token.key,
             'username': user.username,
-            'role': 'admin'
+            'role':     'admin'
         })
 
+    # Check Patient model
     try:
         patient = Patient.objects.get(username=username, password=password)
         patient.last_login = timezone.now()
         patient.save()
+
+        django_user, _ = User.objects.get_or_create(username=f'patient_{patient.id}')
+        token, _ = Token.objects.get_or_create(user=django_user)
+
         return Response({
             'message': 'Login successful',
-            'user': PatientSerializer(patient).data,
-            'role': 'patient'
+            'token':   token.key,
+            'user':    PatientSerializer(patient).data,
+            'role':    'patient'
         })
     except Patient.DoesNotExist:
         return Response(
@@ -119,6 +136,7 @@ def login_view(request):
         )
 
 
+# ── Signup: Patient ───────────────────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def signup_view(request):
@@ -152,6 +170,7 @@ def signup_view(request):
     }, status=status.HTTP_201_CREATED)
 
 
+# ── Patient Registration ──────────────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def submit_registration(request):
@@ -171,13 +190,14 @@ def submit_registration(request):
     if serializer.is_valid():
         serializer.save(patient=patient, queue_number=queue_number)
         return Response({
-            'message': 'Registration submitted successfully',
+            'message':      'Registration submitted successfully',
             'queue_number': queue_number,
             'registration': serializer.data
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# ── Get registrations by patient ──────────────────────────────────────────────
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_patient_registrations(request, username):
