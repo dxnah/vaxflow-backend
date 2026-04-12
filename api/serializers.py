@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import (
     Vaccine,
+    VaccineBatch,
     Announcement,
     Patient,
     Notification,
@@ -14,7 +15,16 @@ from .models import (
 )
 
 
+class VaccineBatchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = VaccineBatch
+        fields = '__all__'
+
+
 class VaccineSerializer(serializers.ModelSerializer):
+    # Nest all batches inside each vaccine response
+    batches = VaccineBatchSerializer(many=True, read_only=True)
+
     class Meta:
         model  = Vaccine
         fields = '__all__'
