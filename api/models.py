@@ -11,14 +11,32 @@ class Vaccine(models.Model):
     name           = models.CharField(max_length=100)
     available      = models.IntegerField(default=0)
     status         = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in_stock')
-    batch_number   = models.CharField(max_length=100, blank=True, null=True)
-    expiry_date    = models.DateField(blank=True, null=True)
     ml_recommended = models.IntegerField(default=0)
     min_stock      = models.IntegerField(default=0)
     created_at     = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self):
         return self.name
+
+
+# ── VaccineBatch ──────────────────────────────────────────────────────────────
+class VaccineBatch(models.Model):
+    vaccine        = models.ForeignKey(
+        'Vaccine',
+        on_delete=models.CASCADE,
+        related_name='batches'
+    )
+    batch_number   = models.CharField(max_length=100)
+    expiry_date    = models.DateField(blank=True, null=True)
+    available      = models.IntegerField(default=0)
+    used           = models.IntegerField(default=0)
+    date_purchased = models.DateField(blank=True, null=True)
+    supplier       = models.CharField(max_length=200, blank=True, null=True)
+    ml_recommended = models.IntegerField(default=0)
+    created_at     = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.vaccine.name} — {self.batch_number}"
 
 
 # ── Announcement ──────────────────────────────────────────────────────────────
@@ -196,20 +214,11 @@ class VaccineOrder(models.Model):
         ('Delivered', 'Delivered'),
         ('Cancelled', 'Cancelled'),
     ]
-    vaccine        = models.ForeignKey(
-        'Vaccine',
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='orders'
-    )
-    supplier       = models.ForeignKey(
-        'Supplier',
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='orders'
-    )
+    # Store as plain text so frontend can POST names without needing FK IDs
+    vaccine        = models.CharField(max_length=100, blank=True, null=True)
+    supplier       = models.CharField(max_length=200, blank=True, null=True)
     amount         = models.IntegerField(default=0)
-    price_per_dose = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    price_per_piece = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total          = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     status         = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     ordered_at     = models.DateTimeField(auto_now_add=True, null=True, blank=True)
