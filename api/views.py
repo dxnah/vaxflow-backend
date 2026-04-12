@@ -103,13 +103,15 @@ def login_view(request):
         )
 
 
-# ── Register ──────────────────────────────────────────────────────────────────
+# ── Signup: Patient ──────────────────────────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def register_view(request):
+def signup_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
     name     = request.data.get('name')
+    email    = request.data.get('email', '')
+    phone    = request.data.get('phone', '')
 
     if not username or not password or not name:
         return Response(
@@ -125,10 +127,12 @@ def register_view(request):
         username=username,
         password=password,
         name=name,
+        email=email,
+        phone=phone, 
         role='patient'
     )
     return Response({
-        'message': 'Registration successful',
+        'message': 'Account created successfully',
         'user': PatientSerializer(patient).data
     }, status=status.HTTP_201_CREATED)
 

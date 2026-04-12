@@ -18,7 +18,7 @@ router.register(r'orders',         views.VaccineOrderViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('login/',                              views.login_view,                name='login'),
-    path('register/',                           views.register_view,             name='register'),
+    path('signup/',                             views.signup_view,               name='signup'),
     path('protected/',                          views.protected_view,            name='protected'),
     path('submit-registration/',                views.submit_registration,       name='submit-registration'),
     path('patient-registrations/<str:username>/', views.get_patient_registrations, name='patient-registrations'),
