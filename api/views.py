@@ -25,7 +25,6 @@ class VaccineViewSet(viewsets.ModelViewSet):
     queryset         = Vaccine.objects.all()
     serializer_class = VaccineSerializer
 
-    # POST /api/vaccines/{id}/batches/  — add a batch to this vaccine
     @action(detail=True, methods=['post'], url_path='batches')
     def add_batch(self, request, pk=None):
         vaccine = self.get_object()
@@ -77,6 +76,16 @@ class DoseScheduleViewSet(viewsets.ModelViewSet):
     queryset         = DoseSchedule.objects.all()
     serializer_class = DoseScheduleSerializer
 
+    def get_queryset(self):
+        username = self.request.query_params.get('username')
+        if username:
+            try:
+                patient = Patient.objects.get(username=username)
+                return DoseSchedule.objects.filter(patient=patient)
+            except Patient.DoesNotExist:
+                return DoseSchedule.objects.none()
+        return DoseSchedule.objects.all()
+
 
 class SupplierViewSet(viewsets.ModelViewSet):
     queryset         = Supplier.objects.all()
@@ -105,7 +114,6 @@ class RegistrationViewSet(viewsets.ModelViewSet):
             return Registration.objects.all()
 
 
-# ── Admin Users ───────────────────────────────────────────────────────────────
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def admin_users_view(request):
@@ -115,14 +123,12 @@ def admin_users_view(request):
     return Response(list(users))
 
 
-# ── Protected ─────────────────────────────────────────────────────────────────
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def protected_view(request):
     return Response({"message": "Authorized — you are logged in!"})
 
 
-# ── Login ─────────────────────────────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
@@ -158,7 +164,6 @@ def login_view(request):
         )
 
 
-# ── Signup ────────────────────────────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def signup_view(request):
@@ -188,7 +193,6 @@ def signup_view(request):
     }, status=status.HTTP_201_CREATED)
 
 
-# ── Patient Registration ──────────────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def submit_registration(request):
@@ -215,7 +219,6 @@ def submit_registration(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ── Get registrations by patient ──────────────────────────────────────────────
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_patient_registrations(request, username):
