@@ -1,5 +1,5 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -7,14 +7,14 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.utils import timezone
 from .models import (
-    Vaccine, Announcement, Patient,
+    Vaccine, VaccineBatch, Announcement, Patient,
     Notification, VaccineUsageReport, StockLevelReport,
     VaccinationHistory, DoseSchedule, Registration,
     Supplier, VaccineOrder,
 )
 from .serializers import (
-    VaccineSerializer, AnnouncementSerializer, PatientSerializer,
-    NotificationSerializer, VaccineUsageReportSerializer,
+    VaccineSerializer, VaccineBatchSerializer, AnnouncementSerializer,
+    PatientSerializer, NotificationSerializer, VaccineUsageReportSerializer,
     StockLevelReportSerializer, VaccinationHistorySerializer,
     DoseScheduleSerializer, RegistrationSerializer,
     SupplierSerializer, VaccineOrderSerializer,
@@ -25,37 +25,63 @@ class VaccineViewSet(viewsets.ModelViewSet):
     queryset         = Vaccine.objects.all()
     serializer_class = VaccineSerializer
 
+    # POST /api/vaccines/{id}/batches/  — add a batch to this vaccine
+    @action(detail=True, methods=['post'], url_path='batches')
+    def add_batch(self, request, pk=None):
+        vaccine = self.get_object()
+        data = request.data.copy()
+        data['vaccine'] = vaccine.id
+        serializer = VaccineBatchSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VaccineBatchViewSet(viewsets.ModelViewSet):
+    queryset         = VaccineBatch.objects.all()
+    serializer_class = VaccineBatchSerializer
+
+
 class AnnouncementViewSet(viewsets.ModelViewSet):
     queryset         = Announcement.objects.all()
     serializer_class = AnnouncementSerializer
+
 
 class PatientViewSet(viewsets.ModelViewSet):
     queryset         = Patient.objects.all()
     serializer_class = PatientSerializer
 
+
 class NotificationViewSet(viewsets.ModelViewSet):
     queryset         = Notification.objects.all()
     serializer_class = NotificationSerializer
+
 
 class VaccineUsageReportViewSet(viewsets.ModelViewSet):
     queryset         = VaccineUsageReport.objects.all()
     serializer_class = VaccineUsageReportSerializer
 
+
 class StockLevelReportViewSet(viewsets.ModelViewSet):
     queryset         = StockLevelReport.objects.all()
     serializer_class = StockLevelReportSerializer
+
 
 class VaccinationHistoryViewSet(viewsets.ModelViewSet):
     queryset         = VaccinationHistory.objects.all()
     serializer_class = VaccinationHistorySerializer
 
+
 class DoseScheduleViewSet(viewsets.ModelViewSet):
     queryset         = DoseSchedule.objects.all()
     serializer_class = DoseScheduleSerializer
 
+
 class SupplierViewSet(viewsets.ModelViewSet):
     queryset         = Supplier.objects.all()
     serializer_class = SupplierSerializer
+
 
 class VaccineOrderViewSet(viewsets.ModelViewSet):
     queryset         = VaccineOrder.objects.all()
@@ -71,15 +97,15 @@ class RegistrationViewSet(viewsets.ModelViewSet):
         if not token_key:
             return Registration.objects.all()
         try:
-            token = Token.objects.get(key=token_key)
+            token      = Token.objects.get(key=token_key)
             patient_id = token.user.username.split('_')[-1]
-            patient = Patient.objects.get(id=patient_id)
+            patient    = Patient.objects.get(id=patient_id)
             return Registration.objects.filter(patient=patient)
         except Exception:
             return Registration.objects.all()
 
 
-# ── Admin Users — staff only ──────────────────────────────────────────────────
+# ── Admin Users ───────────────────────────────────────────────────────────────
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def admin_users_view(request):
@@ -89,7 +115,7 @@ def admin_users_view(request):
     return Response(list(users))
 
 
-# ── Protected endpoint ────────────────────────────────────────────────────────
+# ── Protected ─────────────────────────────────────────────────────────────────
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def protected_view(request):
@@ -103,7 +129,6 @@ def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
 
-    # Check Django admin user first
     user = authenticate(username=username, password=password)
     if user:
         token, _ = Token.objects.get_or_create(user=user)
@@ -114,15 +139,12 @@ def login_view(request):
             'role':     'admin'
         })
 
-    # Check Patient model
     try:
         patient = Patient.objects.get(username=username, password=password)
         patient.last_login = timezone.now()
         patient.save()
-
         django_user, _ = User.objects.get_or_create(username=f'patient_{patient.id}')
-        token, _ = Token.objects.get_or_create(user=django_user)
-
+        token, _       = Token.objects.get_or_create(user=django_user)
         return Response({
             'message': 'Login successful',
             'token':   token.key,
@@ -136,7 +158,7 @@ def login_view(request):
         )
 
 
-# ── Signup: Patient ───────────────────────────────────────────────────────────
+# ── Signup ────────────────────────────────────────────────────────────────────
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def signup_view(request):
@@ -157,12 +179,8 @@ def signup_view(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     patient = Patient.objects.create(
-        username=username,
-        password=password,
-        name=name,
-        email=email,
-        phone=phone,
-        role='patient'
+        username=username, password=password,
+        name=name, email=email, phone=phone, role='patient'
     )
     return Response({
         'message': 'Account created successfully',
@@ -175,17 +193,17 @@ def signup_view(request):
 @permission_classes([AllowAny])
 def submit_registration(request):
     username = request.data.get('username')
-    patient = None
+    patient  = None
     if username:
         try:
             patient = Patient.objects.get(username=username)
         except Patient.DoesNotExist:
             pass
 
-    count = Registration.objects.count()
+    count        = Registration.objects.count()
     queue_number = f'Q-{str(count + 1).zfill(3)}'
 
-    data = request.data.copy()
+    data       = request.data.copy()
     serializer = RegistrationSerializer(data=data)
     if serializer.is_valid():
         serializer.save(patient=patient, queue_number=queue_number)
@@ -202,8 +220,8 @@ def submit_registration(request):
 @permission_classes([AllowAny])
 def get_patient_registrations(request, username):
     try:
-        patient = Patient.objects.get(username=username)
-        regs = Registration.objects.filter(patient=patient).order_by('created_at')
+        patient    = Patient.objects.get(username=username)
+        regs       = Registration.objects.filter(patient=patient).order_by('created_at')
         serializer = RegistrationSerializer(regs, many=True)
         return Response(serializer.data)
     except Patient.DoesNotExist:

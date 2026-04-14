@@ -1,6 +1,5 @@
 from django.db import models
 
-
 # ── Vaccine ───────────────────────────────────────────────────────────────────
 class Vaccine(models.Model):
     STATUS_CHOICES = [
