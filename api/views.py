@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
@@ -56,6 +57,16 @@ class PatientViewSet(viewsets.ModelViewSet):
 class NotificationViewSet(viewsets.ModelViewSet):
     queryset         = Notification.objects.all()
     serializer_class = NotificationSerializer
+
+    @action(detail=False, methods=['post'], url_path='mark_all_read')
+    def mark_all_read(self, request):
+        Notification.objects.filter(read=False).update(read=True)
+        return Response({'status': 'ok'})
+
+    @action(detail=False, methods=['delete'], url_path='clear_all')
+    def clear_all(self, request):
+        Notification.objects.all().delete()
+        return Response(status=204)
 
 
 class VaccineUsageReportViewSet(viewsets.ModelViewSet):
