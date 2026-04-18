@@ -140,4 +140,39 @@ class VaccineOrder(Base):
     status          = Column(String(20), default='Pending')
     ordered_at      = Column(DateTime, nullable=True)
 
+# ── Announcement ──────────────────────────────────────────────────────────────
+class Announcement(Base):
+    __tablename__ = "api_announcement"
+    id         = Column(Integer, primary_key=True, index=True)
+    title      = Column(String(200))
+    message    = Column(Text)
+    created_at = Column(DateTime, nullable=True)
 
+# ── DoseSchedule ──────────────────────────────────────────────────────────────
+class DoseSchedule(Base):
+    __tablename__ = "api_doseschedule"
+    id          = Column(Integer, primary_key=True, index=True)
+    patient_id  = Column(Integer, ForeignKey("api_patient.id"), nullable=True)
+    dose_name   = Column(String(50))
+    dose_date   = Column(Date, nullable=True)
+    completed   = Column(Boolean, default=False)
+    is_optional = Column(Boolean, default=False)
+
+# ── Registration ──────────────────────────────────────────────────────────────
+class Registration(Base):
+    __tablename__ = "api_registration"
+    id                = Column(Integer, primary_key=True, index=True)
+    patient_id        = Column(Integer, ForeignKey("api_patient.id"), nullable=True)
+    full_name         = Column(String(200))
+    age               = Column(String(10))
+    birthdate         = Column(Date, nullable=True)
+    address           = Column(Text)
+    contact           = Column(String(20))
+    incident_date     = Column(Date, nullable=True)
+    injury_type       = Column(String(50))
+    animal_type       = Column(String(50))
+    animal_owner      = Column(String(100))
+    animal_vaccinated = Column(String(20))
+    body_part         = Column(Text)
+    queue_number      = Column(String(10), nullable=True)
+    created_at        = Column(DateTime, nullable=True)
