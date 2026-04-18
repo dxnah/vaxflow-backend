@@ -18,7 +18,7 @@ class Vaccine(models.Model):
         return self.name
 
 
-# ── VaccineBatch ──────────────────────────────────────────────────────────────
+# ── VaccineBatch
 class VaccineBatch(models.Model):
     vaccine        = models.ForeignKey(
         'Vaccine',
@@ -88,7 +88,7 @@ class Notification(models.Model):
         return self.title
 
 
-# ── VaccineUsageReport ────────────────────────────────────────────────────────
+# ── VaccineUsageReport 
 class VaccineUsageReport(models.Model):
     vaccine      = models.ForeignKey(
         'Vaccine',
@@ -107,7 +107,7 @@ class VaccineUsageReport(models.Model):
         return f"{self.vaccine} - {self.period}"
 
 
-# ── StockLevelReport ──────────────────────────────────────────────────────────
+# ── StockLevelReport 
 class StockLevelReport(models.Model):
     date         = models.DateField(blank=True, null=True)
     period_label = models.CharField(max_length=50, blank=True, null=True)
@@ -120,7 +120,7 @@ class StockLevelReport(models.Model):
         return f"Stock Report - {self.period_label}"
 
 
-# ── VaccinationHistory ────────────────────────────────────────────────────────
+# ── VaccinationHistory 
 class VaccinationHistory(models.Model):
     patient         = models.ForeignKey(
         Patient,

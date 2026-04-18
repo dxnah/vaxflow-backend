@@ -14,7 +14,7 @@ class Vaccine(Base):
     created_at     = Column(DateTime, nullable=True)
 
 
-# ── VaccineBatch ──────────────────────────────────────────────────────────────
+# ── VaccineBatch 
 class VaccineBatch(Base):
     __tablename__ = "api_vaccinebatch"
 
@@ -87,7 +87,7 @@ class AdminUser(Base):
     last_login   = Column(DateTime, nullable=True)
 
 
-# ── VaccineUsageReport ────────────────────────────────────────────────────────
+# ── Vaccine Usage Report 
 class VaccineUsageReport(Base):
     __tablename__ = "api_vaccineusagereport"
 
@@ -101,7 +101,7 @@ class VaccineUsageReport(Base):
     created_at   = Column(DateTime, nullable=True)
 
 
-# ── StockLevelReport ──────────────────────────────────────────────────────────
+# ── Stock Level Report 
 class StockLevelReport(Base):
     __tablename__ = "api_stocklevelreport"
 
@@ -114,7 +114,7 @@ class StockLevelReport(Base):
     created_at   = Column(DateTime, nullable=True)
 
 
-# ── VaccinationHistory ────────────────────────────────────────────────────────
+# ── Vaccination History 
 class VaccinationHistory(Base):
     __tablename__ = "api_vaccinationhistory"
 
@@ -127,7 +127,7 @@ class VaccinationHistory(Base):
     administered_by = Column(String(100))
 
 
-# ── VaccineOrder ──────────────────────────────────────────────────────────────
+# ── Vaccine Order 
 class VaccineOrder(Base):
     __tablename__ = "api_vaccineorder"
 
