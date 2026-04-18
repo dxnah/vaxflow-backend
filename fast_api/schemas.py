@@ -1,9 +1,9 @@
 from pydantic import BaseModel
-from datetime import datetime, date
-from typing import Optional
+from datetime import datetime, date as date_type
+from typing import Optional, List
 from decimal import Decimal
 
-# ── Supplier 
+# ── Supplier ──────────────────────────────────────────────────────────────────
 class SupplierOut(BaseModel):
     id:             int
     name:           str
@@ -30,7 +30,7 @@ class SupplierCreate(BaseModel):
     notes:          Optional[str] = None
 
 
-# ── Notification 
+# ── Notification ──────────────────────────────────────────────────────────────
 class NotificationOut(BaseModel):
     id:         int
     title:      str
@@ -50,7 +50,7 @@ class NotificationCreate(BaseModel):
     vaccine_id: Optional[int] = None
 
 
-# ── Patient 
+# ── Patient ───────────────────────────────────────────────────────────────────
 class PatientOut(BaseModel):
     id:         int
     username:   str
@@ -65,8 +65,17 @@ class PatientOut(BaseModel):
     class Config:
         from_attributes = True
 
+class PatientCreate(BaseModel):
+    username: str
+    password: str
+    name:     str
+    role:     str = 'patient'
+    email:    Optional[str] = None
+    phone:    Optional[str] = None
+    status:   str = 'Active'
 
-# ── Admin 
+
+# ── Admin ─────────────────────────────────────────────────────────────────────
 class AdminOut(BaseModel):
     id:           int
     username:     str
@@ -79,15 +88,15 @@ class AdminOut(BaseModel):
         from_attributes = True
 
 
-# ── VaccineBatch 
+# ── VaccineBatch ──────────────────────────────────────────────────────────────
 class VaccineBatchOut(BaseModel):
     id:             int
     vaccine_id:     int
     batch_number:   str
-    expiry_date:    Optional[date] = None
+    expiry_date:    Optional[date_type] = None
     available:      int
     used:           int
-    date_purchased: Optional[date] = None
+    date_purchased: Optional[date_type] = None
     supplier:       Optional[str] = None
     ml_recommended: int
     created_at:     Optional[datetime] = None
@@ -98,15 +107,15 @@ class VaccineBatchOut(BaseModel):
 class VaccineBatchCreate(BaseModel):
     vaccine_id:     int
     batch_number:   str
-    expiry_date:    Optional[date] = None
+    expiry_date:    Optional[date_type] = None
     available:      int = 0
     used:           int = 0
-    date_purchased: Optional[date] = None
+    date_purchased: Optional[date_type] = None
     supplier:       Optional[str] = None
     ml_recommended: int = 0
 
 
-# ── VaccineUsageReport 
+# ── VaccineUsageReport ────────────────────────────────────────────────────────
 class VaccineUsageReportOut(BaseModel):
     id:           int
     vaccine_id:   Optional[int] = None
@@ -114,7 +123,7 @@ class VaccineUsageReportOut(BaseModel):
     wasted:       int
     remaining:    int
     period:       str
-    report_date:  Optional[date] = None
+    report_date:  Optional[date_type] = None
     created_at:   Optional[datetime] = None
 
     class Config:
@@ -126,13 +135,13 @@ class VaccineUsageReportCreate(BaseModel):
     wasted:       int = 0
     remaining:    int = 0
     period:       str = 'monthly'
-    report_date:  Optional[date] = None
+    report_date:  Optional[date_type] = None
 
 
-# ── StockLevelReport 
+# ── StockLevelReport ──────────────────────────────────────────────────────────
 class StockLevelReportOut(BaseModel):
     id:           int
-    date:         Optional[date] = None
+    date:         Optional[date_type] = None
     period_label: Optional[str] = None
     in_stock:     int
     low_stock:    int
@@ -143,20 +152,20 @@ class StockLevelReportOut(BaseModel):
         from_attributes = True
 
 class StockLevelReportCreate(BaseModel):
-    date:         Optional[date] = None
+    date:         Optional[date_type] = None
     period_label: Optional[str] = None
     in_stock:     int = 0
     low_stock:    int = 0
     out_stock:    int = 0
 
 
-# ── VaccinationHistory 
+# ── VaccinationHistory ────────────────────────────────────────────────────────
 class VaccinationHistoryOut(BaseModel):
     id:              int
     patient_id:      int
     vaccine_id:      Optional[int] = None
     dose:            str
-    date:            Optional[date] = None
+    date:            Optional[date_type] = None
     facility:        str
     administered_by: str
 
@@ -167,12 +176,12 @@ class VaccinationHistoryCreate(BaseModel):
     patient_id:      int
     vaccine_id:      Optional[int] = None
     dose:            str
-    date:            Optional[date] = None
+    date:            Optional[date_type] = None
     facility:        str
     administered_by: str
 
 
-# ── VaccineOrder 
+# ── VaccineOrder ──────────────────────────────────────────────────────────────
 class VaccineOrderOut(BaseModel):
     id:              int
     vaccine:         Optional[str] = None
@@ -194,7 +203,8 @@ class VaccineOrderCreate(BaseModel):
     total:           Decimal = Decimal('0')
     status:          str = 'Pending'
 
-    # ── Announcement ──────────────────────────────────────────────────────────────
+
+# ── Announcement ──────────────────────────────────────────────────────────────
 class AnnouncementOut(BaseModel):
     id:         int
     title:      Optional[str] = None
@@ -205,9 +215,8 @@ class AnnouncementOut(BaseModel):
         from_attributes = True
 
 class AnnouncementCreate(BaseModel):
-    title:      Optional[str] = None
-    message:    Optional[str] = None
-    created_at: Optional[datetime] = None
+    title:   Optional[str] = None
+    message: Optional[str] = None
 
 
 # ── DoseSchedule ──────────────────────────────────────────────────────────────
@@ -215,7 +224,7 @@ class DoseScheduleOut(BaseModel):
     id:          int
     patient_id:  Optional[int] = None
     dose_name:   str
-    dose_date:   Optional[date] = None
+    dose_date:   Optional[date_type] = None
     completed:   bool
     is_optional: bool
 
@@ -225,7 +234,7 @@ class DoseScheduleOut(BaseModel):
 class DoseScheduleCreate(BaseModel):
     patient_id:  Optional[int] = None
     dose_name:   str
-    dose_date:   Optional[date] = None
+    dose_date:   Optional[date_type] = None
     completed:   bool = False
     is_optional: bool = False
 
@@ -236,10 +245,10 @@ class RegistrationOut(BaseModel):
     patient_id:        Optional[int] = None
     full_name:         Optional[str] = None
     age:               Optional[str] = None
-    birthdate:         Optional[date] = None
+    birthdate:         Optional[date_type] = None
     address:           Optional[str] = None
     contact:           Optional[str] = None
-    incident_date:     Optional[date] = None
+    incident_date:     Optional[date_type] = None
     injury_type:       Optional[str] = None
     animal_type:       Optional[str] = None
     animal_owner:      Optional[str] = None
@@ -255,14 +264,13 @@ class RegistrationCreate(BaseModel):
     patient_id:        Optional[int] = None
     full_name:         Optional[str] = None
     age:               Optional[str] = None
-    birthdate:         Optional[date] = None
+    birthdate:         Optional[date_type] = None
     address:           Optional[str] = None
     contact:           Optional[str] = None
-    incident_date:     Optional[date] = None
+    incident_date:     Optional[date_type] = None
     injury_type:       Optional[str] = None
     animal_type:       Optional[str] = None
     animal_owner:      Optional[str] = None
     animal_vaccinated: Optional[str] = None
     body_part:         Optional[str] = None
     queue_number:      Optional[str] = None
-    created_at:        Optional[datetime] = None
