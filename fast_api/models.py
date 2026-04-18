@@ -139,3 +139,5 @@ class VaccineOrder(Base):
     total           = Column(Numeric(12, 2), default=0)
     status          = Column(String(20), default='Pending')
     ordered_at      = Column(DateTime, nullable=True)
+
+
