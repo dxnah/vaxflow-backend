@@ -3,7 +3,7 @@ from datetime import datetime, date
 from typing import Optional
 from decimal import Decimal
 
-# ── Supplier ──────────────────────────────────────────────────────────────────
+# ── Supplier 
 class SupplierOut(BaseModel):
     id:             int
     name:           str
@@ -30,7 +30,7 @@ class SupplierCreate(BaseModel):
     notes:          Optional[str] = None
 
 
-# ── Notification ──────────────────────────────────────────────────────────────
+# ── Notification 
 class NotificationOut(BaseModel):
     id:         int
     title:      str
@@ -50,7 +50,7 @@ class NotificationCreate(BaseModel):
     vaccine_id: Optional[int] = None
 
 
-# ── Patient ───────────────────────────────────────────────────────────────────
+# ── Patient 
 class PatientOut(BaseModel):
     id:         int
     username:   str
@@ -66,7 +66,7 @@ class PatientOut(BaseModel):
         from_attributes = True
 
 
-# ── Admin ─────────────────────────────────────────────────────────────────────
+# ── Admin 
 class AdminOut(BaseModel):
     id:           int
     username:     str
@@ -79,7 +79,7 @@ class AdminOut(BaseModel):
         from_attributes = True
 
 
-# ── VaccineBatch ──────────────────────────────────────────────────────────────
+# ── VaccineBatch 
 class VaccineBatchOut(BaseModel):
     id:             int
     vaccine_id:     int
@@ -106,7 +106,7 @@ class VaccineBatchCreate(BaseModel):
     ml_recommended: int = 0
 
 
-# ── VaccineUsageReport ────────────────────────────────────────────────────────
+# ── VaccineUsageReport 
 class VaccineUsageReportOut(BaseModel):
     id:           int
     vaccine_id:   Optional[int] = None
@@ -129,7 +129,7 @@ class VaccineUsageReportCreate(BaseModel):
     report_date:  Optional[date] = None
 
 
-# ── StockLevelReport ──────────────────────────────────────────────────────────
+# ── StockLevelReport 
 class StockLevelReportOut(BaseModel):
     id:           int
     date:         Optional[date] = None
@@ -150,7 +150,7 @@ class StockLevelReportCreate(BaseModel):
     out_stock:    int = 0
 
 
-# ── VaccinationHistory ────────────────────────────────────────────────────────
+# ── VaccinationHistory 
 class VaccinationHistoryOut(BaseModel):
     id:              int
     patient_id:      int
@@ -172,7 +172,7 @@ class VaccinationHistoryCreate(BaseModel):
     administered_by: str
 
 
-# ── VaccineOrder ──────────────────────────────────────────────────────────────
+# ── VaccineOrder 
 class VaccineOrderOut(BaseModel):
     id:              int
     vaccine:         Optional[str] = None
