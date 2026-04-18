@@ -193,3 +193,76 @@ class VaccineOrderCreate(BaseModel):
     price_per_piece: Decimal = Decimal('0')
     total:           Decimal = Decimal('0')
     status:          str = 'Pending'
+
+    # ── Announcement ──────────────────────────────────────────────────────────────
+class AnnouncementOut(BaseModel):
+    id:         int
+    title:      Optional[str] = None
+    message:    Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class AnnouncementCreate(BaseModel):
+    title:      Optional[str] = None
+    message:    Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
+# ── DoseSchedule ──────────────────────────────────────────────────────────────
+class DoseScheduleOut(BaseModel):
+    id:          int
+    patient_id:  Optional[int] = None
+    dose_name:   str
+    dose_date:   Optional[date] = None
+    completed:   bool
+    is_optional: bool
+
+    class Config:
+        from_attributes = True
+
+class DoseScheduleCreate(BaseModel):
+    patient_id:  Optional[int] = None
+    dose_name:   str
+    dose_date:   Optional[date] = None
+    completed:   bool = False
+    is_optional: bool = False
+
+
+# ── Registration ──────────────────────────────────────────────────────────────
+class RegistrationOut(BaseModel):
+    id:                int
+    patient_id:        Optional[int] = None
+    full_name:         Optional[str] = None
+    age:               Optional[str] = None
+    birthdate:         Optional[date] = None
+    address:           Optional[str] = None
+    contact:           Optional[str] = None
+    incident_date:     Optional[date] = None
+    injury_type:       Optional[str] = None
+    animal_type:       Optional[str] = None
+    animal_owner:      Optional[str] = None
+    animal_vaccinated: Optional[str] = None
+    body_part:         Optional[str] = None
+    queue_number:      Optional[str] = None
+    created_at:        Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class RegistrationCreate(BaseModel):
+    patient_id:        Optional[int] = None
+    full_name:         Optional[str] = None
+    age:               Optional[str] = None
+    birthdate:         Optional[date] = None
+    address:           Optional[str] = None
+    contact:           Optional[str] = None
+    incident_date:     Optional[date] = None
+    injury_type:       Optional[str] = None
+    animal_type:       Optional[str] = None
+    animal_owner:      Optional[str] = None
+    animal_vaccinated: Optional[str] = None
+    body_part:         Optional[str] = None
+    queue_number:      Optional[str] = None
+    created_at:        Optional[datetime] = None
