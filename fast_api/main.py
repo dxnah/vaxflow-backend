@@ -10,8 +10,8 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -128,12 +128,45 @@ def delete_patient(patient_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Patient deleted"}
 
+# ── Vaccines ──────────────────────────────────────────────────────────────────
+@app.get("/api/vaccines/", response_model=list[schemas.VaccineOut])
+def get_vaccines(db: Session = Depends(get_db)):
+    return db.query(models.Vaccine).all()
 
-# ── Admins ────────────────────────────────────────────────────────────────────
-@app.get("/api/admins/", response_model=list[schemas.AdminOut])
-def get_admins(db: Session = Depends(get_db)):
-    return db.query(models.AdminUser).filter(models.AdminUser.is_staff == True).all()
+@app.get("/api/vaccines/{vaccine_id}/", response_model=schemas.VaccineOut)
+def get_vaccine(vaccine_id: int, db: Session = Depends(get_db)):
+    vaccine = db.query(models.Vaccine).filter(models.Vaccine.id == vaccine_id).first()
+    if not vaccine:
+        raise HTTPException(status_code=404, detail="Vaccine not found")
+    return vaccine
 
+@app.post("/api/vaccines/", response_model=schemas.VaccineOut)
+def create_vaccine(vaccine: schemas.VaccineCreate, db: Session = Depends(get_db)):
+    new_vaccine = models.Vaccine(**vaccine.model_dump())
+    db.add(new_vaccine)
+    db.commit()
+    db.refresh(new_vaccine)
+    return new_vaccine
+
+@app.put("/api/vaccines/{vaccine_id}/", response_model=schemas.VaccineOut)
+def update_vaccine(vaccine_id: int, vaccine: schemas.VaccineCreate, db: Session = Depends(get_db)):
+    existing = db.query(models.Vaccine).filter(models.Vaccine.id == vaccine_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Vaccine not found")
+    for key, value in vaccine.model_dump().items():
+        setattr(existing, key, value)
+    db.commit()
+    db.refresh(existing)
+    return existing
+
+@app.delete("/api/vaccines/{vaccine_id}/")
+def delete_vaccine(vaccine_id: int, db: Session = Depends(get_db)):
+    vaccine = db.query(models.Vaccine).filter(models.Vaccine.id == vaccine_id).first()
+    if not vaccine:
+        raise HTTPException(status_code=404, detail="Vaccine not found")
+    db.delete(vaccine)
+    db.commit()
+    return {"message": "Vaccine deleted"}
 
 # ── VaccineBatches ────────────────────────────────────────────────────────────
 @app.get("/api/batches/", response_model=list[schemas.VaccineBatchOut])
@@ -404,3 +437,46 @@ def delete_registration(registration_id: int, db: Session = Depends(get_db)):
     db.delete(registration)
     db.commit()
     return {"message": "Registration deleted"}
+
+@app.post("/api/login/")
+def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
+    username = credentials.username
+    password = credentials.password
+
+    # check patient first
+    patient = db.query(models.Patient).filter(
+        models.Patient.username == username,
+        models.Patient.password == password
+    ).first()
+
+    if patient:
+        return {
+            "message": "Login successful",
+            "role": "patient",
+            "user": {
+                "id":       patient.id,
+                "username": patient.username,
+                "name":     patient.name,
+                "email":    patient.email,
+                "role":     patient.role,
+            }
+        }
+
+    # check admin
+    admin = db.query(models.AdminUser).filter(
+        models.AdminUser.username == username,
+        models.AdminUser.is_staff == True
+    ).first()
+
+    if admin:
+        return {
+            "message": "Login successful",
+            "role": "admin",
+            "user": {
+                "id":       admin.id,
+                "username": admin.username,
+                "email":    admin.email,
+            }
+        }
+
+    raise HTTPException(status_code=401, detail="Invalid username or password")

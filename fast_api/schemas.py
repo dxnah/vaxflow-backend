@@ -75,17 +75,6 @@ class PatientCreate(BaseModel):
     status:   str = 'Active'
 
 
-# ── Admin ─────────────────────────────────────────────────────────────────────
-class AdminOut(BaseModel):
-    id:           int
-    username:     str
-    email:        str
-    is_staff:     bool
-    is_superuser: bool
-    last_login:   Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 
 # ── VaccineBatch ──────────────────────────────────────────────────────────────
@@ -274,3 +263,26 @@ class RegistrationCreate(BaseModel):
     animal_vaccinated: Optional[str] = None
     body_part:         Optional[str] = None
     queue_number:      Optional[str] = None
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class VaccineOut(BaseModel):
+    id:             int
+    name:           str
+    available:      int
+    status:         str
+    ml_recommended: int
+    min_stock:      int
+    created_at:     Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class VaccineCreate(BaseModel):
+    name:           str
+    available:      int = 0
+    status:         str = 'in_stock'
+    ml_recommended: int = 0
+    min_stock:      int = 0
