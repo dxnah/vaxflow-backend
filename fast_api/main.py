@@ -480,3 +480,115 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
         }
 
     raise HTTPException(status_code=401, detail="Invalid username or password")
+
+@app.post("/api/signup/")
+def signup(patient: schemas.PatientCreate, db: Session = Depends(get_db)):
+    existing = db.query(models.Patient).filter(models.Patient.username == patient.username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already taken")
+    new_patient = models.Patient(**patient.model_dump())
+    db.add(new_patient)
+    db.commit()
+    db.refresh(new_patient)
+    return {"message": "Account created successfully"}
+
+# ── Announcements ─────────────────────────────────────────────────────────────
+@app.get("/api/announcements/", response_model=list[schemas.AnnouncementOut])
+def get_announcements(db: Session = Depends(get_db)):
+    return db.query(models.Announcement).all()
+
+@app.post("/api/announcements/")
+def create_announcement(announcement: schemas.AnnouncementCreate, db: Session = Depends(get_db)):
+    new_announcement = models.Announcement(**announcement.model_dump())
+    db.add(new_announcement)
+    db.commit()
+    db.refresh(new_announcement)
+    return {"message": "Announcement created successfully"}
+
+@app.put("/api/announcements/{announcement_id}/")
+def update_announcement(announcement_id: int, announcement: schemas.AnnouncementCreate, db: Session = Depends(get_db)):
+    existing = db.query(models.Announcement).filter(models.Announcement.id == announcement_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    for key, value in announcement.model_dump().items():
+        setattr(existing, key, value)
+    db.commit()
+    db.refresh(existing)
+    return {"message": "Announcement updated successfully"}
+
+@app.delete("/api/announcements/{announcement_id}/")
+def delete_announcement(announcement_id: int, db: Session = Depends(get_db)):
+    existing = db.query(models.Announcement).filter(models.Announcement.id == announcement_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    db.delete(existing)
+    db.commit()
+    return {"message": "Announcement deleted successfully"}
+
+
+# ── DoseSchedules ─────────────────────────────────────────────────────────────
+@app.get("/api/dose-schedules/", response_model=list[schemas.DoseScheduleOut])
+def get_dose_schedules(db: Session = Depends(get_db)):
+    return db.query(models.DoseSchedule).all()
+
+@app.post("/api/dose-schedules/")
+def create_dose_schedule(schedule: schemas.DoseScheduleCreate, db: Session = Depends(get_db)):
+    new_schedule = models.DoseSchedule(**schedule.model_dump())
+    db.add(new_schedule)
+    db.commit()
+    db.refresh(new_schedule)
+    return {"message": "Dose schedule created successfully"}
+
+@app.put("/api/dose-schedules/{schedule_id}/")
+def update_dose_schedule(schedule_id: int, schedule: schemas.DoseScheduleCreate, db: Session = Depends(get_db)):
+    existing = db.query(models.DoseSchedule).filter(models.DoseSchedule.id == schedule_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Dose schedule not found")
+    for key, value in schedule.model_dump().items():
+        setattr(existing, key, value)
+    db.commit()
+    db.refresh(existing)
+    return {"message": "Dose schedule updated successfully"}
+
+@app.delete("/api/dose-schedules/{schedule_id}/")
+def delete_dose_schedule(schedule_id: int, db: Session = Depends(get_db)):
+    existing = db.query(models.DoseSchedule).filter(models.DoseSchedule.id == schedule_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Dose schedule not found")
+    db.delete(existing)
+    db.commit()
+    return {"message": "Dose schedule deleted successfully"}
+
+
+# ── Registrations ─────────────────────────────────────────────────────────────
+@app.get("/api/registrations/", response_model=list[schemas.RegistrationOut])
+def get_registrations(db: Session = Depends(get_db)):
+    return db.query(models.Registration).all()
+
+@app.post("/api/registrations/")
+def create_registration(registration: schemas.RegistrationCreate, db: Session = Depends(get_db)):
+    new_registration = models.Registration(**registration.model_dump())
+    db.add(new_registration)
+    db.commit()
+    db.refresh(new_registration)
+    return {"message": "Registration created successfully"}
+
+@app.put("/api/registrations/{registration_id}/")
+def update_registration(registration_id: int, registration: schemas.RegistrationCreate, db: Session = Depends(get_db)):
+    existing = db.query(models.Registration).filter(models.Registration.id == registration_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Registration not found")
+    for key, value in registration.model_dump().items():
+        setattr(existing, key, value)
+    db.commit()
+    db.refresh(existing)
+    return {"message": "Registration updated successfully"}
+
+@app.delete("/api/registrations/{registration_id}/")
+def delete_registration(registration_id: int, db: Session = Depends(get_db)):
+    existing = db.query(models.Registration).filter(models.Registration.id == registration_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Registration not found")
+    db.delete(existing)
+    db.commit()
+    return {"message": "Registration deleted successfully"}
