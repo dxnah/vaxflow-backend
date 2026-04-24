@@ -4,7 +4,7 @@ from . import views
 
 router = DefaultRouter()
 router.register(r'vaccines',       views.VaccineViewSet)
-router.register(r'batches',        views.VaccineBatchViewSet) 
+router.register(r'batches',        views.VaccineBatchViewSet)
 router.register(r'announcements',  views.AnnouncementViewSet)
 router.register(r'patients',       views.PatientViewSet)
 router.register(r'notifications',  views.NotificationViewSet)
@@ -24,4 +24,5 @@ urlpatterns = [
     path('protected/',                            views.protected_view,            name='protected'),
     path('submit-registration/',                  views.submit_registration,       name='submit-registration'),
     path('patient-registrations/<str:username>/', views.get_patient_registrations, name='patient-registrations'),
+    path('update-patient/',                       views.update_patient,            name='update-patient'),
 ]

@@ -286,3 +286,13 @@ class VaccineCreate(BaseModel):
     status:         str = 'in_stock'
     ml_recommended: int = 0
     min_stock:      int = 0
+
+
+class PatientUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
+
+    class Config:
+        from_attributes = True

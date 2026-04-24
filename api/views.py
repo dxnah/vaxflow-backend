@@ -240,3 +240,30 @@ def get_patient_registrations(request, username):
         return Response(serializer.data)
     except Patient.DoesNotExist:
         return Response({'error': 'Patient not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    
+@api_view(['PATCH'])
+@permission_classes([AllowAny])
+def update_patient(request):
+    username = request.data.get('username')
+    new_username = request.data.get('new_username')
+    current_password = request.data.get('current_password')
+    new_password = request.data.get('new_password')
+
+    try:
+        patient = Patient.objects.get(username=username)
+    except Patient.DoesNotExist:
+        return Response({'error': 'Patient not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if new_password:
+        if patient.password != current_password:
+            return Response({'error': 'Current password is incorrect'}, status=status.HTTP_400_BAD_REQUEST)
+        patient.password = new_password
+
+    if new_username and new_username != username:
+        if Patient.objects.filter(username=new_username).exists():
+            return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        patient.username = new_username
+
+    patient.save()
+    return Response({'message': 'Updated successfully', 'user': PatientSerializer(patient).data})
