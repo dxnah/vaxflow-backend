@@ -3,6 +3,13 @@ from datetime import datetime, date as date_type
 from typing import Optional, List
 from decimal import Decimal
 
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
 # ── Supplier ──────────────────────────────────────────────────────────────────
 class SupplierOut(BaseModel):
     id:             int
@@ -74,7 +81,36 @@ class PatientCreate(BaseModel):
     phone:    Optional[str] = None
     status:   str = 'Active'
 
+# For Settings screen — partial update only (no role/status overwrite)
+class PatientUpdate(BaseModel):
+    name:     Optional[str] = None
+    email:    Optional[str] = None
+    phone:    Optional[str] = None
+    password: Optional[str] = None
 
+    class Config:
+        from_attributes = True
+
+
+# ── Vaccine ───────────────────────────────────────────────────────────────────
+class VaccineOut(BaseModel):
+    id:             int
+    name:           str
+    available:      int
+    status:         str
+    ml_recommended: int
+    min_stock:      int
+    created_at:     Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class VaccineCreate(BaseModel):
+    name:           str
+    available:      int = 0
+    status:         str = 'in_stock'
+    ml_recommended: int = 0
+    min_stock:      int = 0
 
 
 # ── VaccineBatch ──────────────────────────────────────────────────────────────
@@ -263,36 +299,3 @@ class RegistrationCreate(BaseModel):
     animal_vaccinated: Optional[str] = None
     body_part:         Optional[str] = None
     queue_number:      Optional[str] = None
-
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
-class VaccineOut(BaseModel):
-    id:             int
-    name:           str
-    available:      int
-    status:         str
-    ml_recommended: int
-    min_stock:      int
-    created_at:     Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-class VaccineCreate(BaseModel):
-    name:           str
-    available:      int = 0
-    status:         str = 'in_stock'
-    ml_recommended: int = 0
-    min_stock:      int = 0
-
-
-class PatientUpdate(BaseModel):
-    name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    password: Optional[str] = None
-
-    class Config:
-        from_attributes = True
