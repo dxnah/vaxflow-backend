@@ -309,6 +309,7 @@ def delete_notification(notif_id: int, db: Session = Depends(get_db)):
     return {"message": "Notification deleted"}
 
 
+
 # ── Announcements ─────────────────────────────────────────────────────────────
 @app.get("/api/announcements/", response_model=list[schemas.AnnouncementOut])
 def get_announcements(db: Session = Depends(get_db)):

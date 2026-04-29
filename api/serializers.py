@@ -50,9 +50,30 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 class VaccineUsageReportSerializer(serializers.ModelSerializer):
+    # Django names the FK field "vaccine" (the model attribute name).
+    # FastAPI names it "vaccine_id" (the column name).
+    # Adding vaccine_id as an explicit read/write alias makes both backends
+    # return the same field name, so the frontend works against either.
+    vaccine_id = serializers.PrimaryKeyRelatedField(
+        source='vaccine',
+        queryset=Vaccine.objects.all(),
+        allow_null=True,
+        required=False,
+    )
+
     class Meta:
         model  = VaccineUsageReport
-        fields = '__all__'
+        # List fields explicitly so we control the name: vaccine_id instead of vaccine
+        fields = [
+            'id',
+            'vaccine_id',     # ← exposed as vaccine_id (not vaccine) to match FastAPI
+            'administered',
+            'wasted',
+            'remaining',
+            'period',
+            'report_date',
+            'created_at',
+        ]
 
 
 class StockLevelReportSerializer(serializers.ModelSerializer):
