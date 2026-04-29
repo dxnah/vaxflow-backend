@@ -74,6 +74,8 @@ def update_notification(notif_id: int, notif: schemas.NotificationCreate, db: Se
     db.refresh(existing)
     return existing
 
+# NOTE: /api/notifications/mark_all_read/ must be defined BEFORE /{notif_id}/
+# so FastAPI doesn't try to parse "mark_all_read" as an integer ID.
 @app.post("/api/notifications/mark_all_read/")
 def mark_all_read(db: Session = Depends(get_db)):
     db.query(models.Notification).filter(models.Notification.read == False).update({"read": True})
@@ -85,6 +87,18 @@ def clear_all_notifications(db: Session = Depends(get_db)):
     db.query(models.Notification).delete()
     db.commit()
     return {"message": "All notifications cleared"}
+
+@app.patch("/api/notifications/{notif_id}/", response_model=schemas.NotificationOut)
+def patch_notification(notif_id: int, notif: dict, db: Session = Depends(get_db)):
+    existing = db.query(models.Notification).filter(models.Notification.id == notif_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    for key, value in notif.items():
+        if hasattr(existing, key):
+            setattr(existing, key, value)
+    db.commit()
+    db.refresh(existing)
+    return existing
 
 @app.delete("/api/notifications/{notif_id}/")
 def delete_notification(notif_id: int, db: Session = Depends(get_db)):
@@ -128,6 +142,7 @@ def delete_patient(patient_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Patient deleted"}
 
+
 # ── Vaccines ──────────────────────────────────────────────────────────────────
 @app.get("/api/vaccines/", response_model=list[schemas.VaccineOut])
 def get_vaccines(db: Session = Depends(get_db)):
@@ -167,6 +182,7 @@ def delete_vaccine(vaccine_id: int, db: Session = Depends(get_db)):
     db.delete(vaccine)
     db.commit()
     return {"message": "Vaccine deleted"}
+
 
 # ── VaccineBatches ────────────────────────────────────────────────────────────
 @app.get("/api/batches/", response_model=list[schemas.VaccineBatchOut])
@@ -328,6 +344,21 @@ def update_order(order_id: int, order: schemas.VaccineOrderCreate, db: Session =
     db.refresh(existing)
     return existing
 
+# PATCH /api/orders/{id}/ — used by frontend's orderAPI.updateStatus({ status: newStatus })
+@app.patch("/api/orders/{order_id}/", response_model=schemas.VaccineOrderOut)
+def patch_order(order_id: int, data: dict, db: Session = Depends(get_db)):
+    existing = db.query(models.VaccineOrder).filter(models.VaccineOrder.id == order_id).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Order not found")
+    # Only update the fields that were sent (partial update)
+    allowed = {"status", "vaccine", "supplier", "amount", "price_per_piece", "total"}
+    for key, value in data.items():
+        if key in allowed and hasattr(existing, key):
+            setattr(existing, key, value)
+    db.commit()
+    db.refresh(existing)
+    return existing
+
 @app.delete("/api/orders/{order_id}/")
 def delete_order(order_id: int, db: Session = Depends(get_db)):
     order = db.query(models.VaccineOrder).filter(models.VaccineOrder.id == order_id).first()
@@ -336,6 +367,7 @@ def delete_order(order_id: int, db: Session = Depends(get_db)):
     db.delete(order)
     db.commit()
     return {"message": "Order deleted"}
+
 
 # ── Announcements ─────────────────────────────────────────────────────────────
 @app.get("/api/announcements/", response_model=list[schemas.AnnouncementOut])
@@ -438,12 +470,13 @@ def delete_registration(registration_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Registration deleted"}
 
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
 @app.post("/api/login/")
 def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
     username = credentials.username
     password = credentials.password
 
-    # check patient first
     patient = db.query(models.Patient).filter(
         models.Patient.username == username,
         models.Patient.password == password
@@ -462,7 +495,6 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
             }
         }
 
-    # check admin
     admin = db.query(models.AdminUser).filter(
         models.AdminUser.username == username,
         models.AdminUser.is_staff == True
@@ -491,104 +523,3 @@ def signup(patient: schemas.PatientCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_patient)
     return {"message": "Account created successfully"}
-
-# ── Announcements ─────────────────────────────────────────────────────────────
-@app.get("/api/announcements/", response_model=list[schemas.AnnouncementOut])
-def get_announcements(db: Session = Depends(get_db)):
-    return db.query(models.Announcement).all()
-
-@app.post("/api/announcements/")
-def create_announcement(announcement: schemas.AnnouncementCreate, db: Session = Depends(get_db)):
-    new_announcement = models.Announcement(**announcement.model_dump())
-    db.add(new_announcement)
-    db.commit()
-    db.refresh(new_announcement)
-    return {"message": "Announcement created successfully"}
-
-@app.put("/api/announcements/{announcement_id}/")
-def update_announcement(announcement_id: int, announcement: schemas.AnnouncementCreate, db: Session = Depends(get_db)):
-    existing = db.query(models.Announcement).filter(models.Announcement.id == announcement_id).first()
-    if not existing:
-        raise HTTPException(status_code=404, detail="Announcement not found")
-    for key, value in announcement.model_dump().items():
-        setattr(existing, key, value)
-    db.commit()
-    db.refresh(existing)
-    return {"message": "Announcement updated successfully"}
-
-@app.delete("/api/announcements/{announcement_id}/")
-def delete_announcement(announcement_id: int, db: Session = Depends(get_db)):
-    existing = db.query(models.Announcement).filter(models.Announcement.id == announcement_id).first()
-    if not existing:
-        raise HTTPException(status_code=404, detail="Announcement not found")
-    db.delete(existing)
-    db.commit()
-    return {"message": "Announcement deleted successfully"}
-
-
-# ── DoseSchedules ─────────────────────────────────────────────────────────────
-@app.get("/api/dose-schedules/", response_model=list[schemas.DoseScheduleOut])
-def get_dose_schedules(db: Session = Depends(get_db)):
-    return db.query(models.DoseSchedule).all()
-
-@app.post("/api/dose-schedules/")
-def create_dose_schedule(schedule: schemas.DoseScheduleCreate, db: Session = Depends(get_db)):
-    new_schedule = models.DoseSchedule(**schedule.model_dump())
-    db.add(new_schedule)
-    db.commit()
-    db.refresh(new_schedule)
-    return {"message": "Dose schedule created successfully"}
-
-@app.put("/api/dose-schedules/{schedule_id}/")
-def update_dose_schedule(schedule_id: int, schedule: schemas.DoseScheduleCreate, db: Session = Depends(get_db)):
-    existing = db.query(models.DoseSchedule).filter(models.DoseSchedule.id == schedule_id).first()
-    if not existing:
-        raise HTTPException(status_code=404, detail="Dose schedule not found")
-    for key, value in schedule.model_dump().items():
-        setattr(existing, key, value)
-    db.commit()
-    db.refresh(existing)
-    return {"message": "Dose schedule updated successfully"}
-
-@app.delete("/api/dose-schedules/{schedule_id}/")
-def delete_dose_schedule(schedule_id: int, db: Session = Depends(get_db)):
-    existing = db.query(models.DoseSchedule).filter(models.DoseSchedule.id == schedule_id).first()
-    if not existing:
-        raise HTTPException(status_code=404, detail="Dose schedule not found")
-    db.delete(existing)
-    db.commit()
-    return {"message": "Dose schedule deleted successfully"}
-
-
-# ── Registrations ─────────────────────────────────────────────────────────────
-@app.get("/api/registrations/", response_model=list[schemas.RegistrationOut])
-def get_registrations(db: Session = Depends(get_db)):
-    return db.query(models.Registration).all()
-
-@app.post("/api/registrations/")
-def create_registration(registration: schemas.RegistrationCreate, db: Session = Depends(get_db)):
-    new_registration = models.Registration(**registration.model_dump())
-    db.add(new_registration)
-    db.commit()
-    db.refresh(new_registration)
-    return {"message": "Registration created successfully"}
-
-@app.put("/api/registrations/{registration_id}/")
-def update_registration(registration_id: int, registration: schemas.RegistrationCreate, db: Session = Depends(get_db)):
-    existing = db.query(models.Registration).filter(models.Registration.id == registration_id).first()
-    if not existing:
-        raise HTTPException(status_code=404, detail="Registration not found")
-    for key, value in registration.model_dump().items():
-        setattr(existing, key, value)
-    db.commit()
-    db.refresh(existing)
-    return {"message": "Registration updated successfully"}
-
-@app.delete("/api/registrations/{registration_id}/")
-def delete_registration(registration_id: int, db: Session = Depends(get_db)):
-    existing = db.query(models.Registration).filter(models.Registration.id == registration_id).first()
-    if not existing:
-        raise HTTPException(status_code=404, detail="Registration not found")
-    db.delete(existing)
-    db.commit()
-    return {"message": "Registration deleted successfully"}
