@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, Date, ForeignKey, Numeric
 from .database import Base
 
-# ── Vaccine (needed for FK references) ───────────────────────────────────────
+
+# ── Vaccine ───────────────────────────────────────────────────────────────────
 class Vaccine(Base):
     __tablename__ = "api_vaccine"
 
@@ -14,7 +15,7 @@ class Vaccine(Base):
     created_at     = Column(DateTime, nullable=True)
 
 
-# ── VaccineBatch 
+# ── VaccineBatch ──────────────────────────────────────────────────────────────
 class VaccineBatch(Base):
     __tablename__ = "api_vaccinebatch"
 
@@ -87,7 +88,7 @@ class AdminUser(Base):
     last_login   = Column(DateTime, nullable=True)
 
 
-# ── Vaccine Usage Report 
+# ── VaccineUsageReport ────────────────────────────────────────────────────────
 class VaccineUsageReport(Base):
     __tablename__ = "api_vaccineusagereport"
 
@@ -101,7 +102,7 @@ class VaccineUsageReport(Base):
     created_at   = Column(DateTime, nullable=True)
 
 
-# ── Stock Level Report 
+# ── StockLevelReport ──────────────────────────────────────────────────────────
 class StockLevelReport(Base):
     __tablename__ = "api_stocklevelreport"
 
@@ -114,7 +115,7 @@ class StockLevelReport(Base):
     created_at   = Column(DateTime, nullable=True)
 
 
-# ── Vaccination History 
+# ── VaccinationHistory ────────────────────────────────────────────────────────
 class VaccinationHistory(Base):
     __tablename__ = "api_vaccinationhistory"
 
@@ -127,7 +128,7 @@ class VaccinationHistory(Base):
     administered_by = Column(String(100))
 
 
-# ── Vaccine Order 
+# ── VaccineOrder ──────────────────────────────────────────────────────────────
 class VaccineOrder(Base):
     __tablename__ = "api_vaccineorder"
 
@@ -140,17 +141,21 @@ class VaccineOrder(Base):
     status          = Column(String(20), default='Pending')
     ordered_at      = Column(DateTime, nullable=True)
 
+
 # ── Announcement ──────────────────────────────────────────────────────────────
 class Announcement(Base):
     __tablename__ = "api_announcement"
+
     id         = Column(Integer, primary_key=True, index=True)
     title      = Column(String(200))
     message    = Column(Text)
     created_at = Column(DateTime, nullable=True)
 
+
 # ── DoseSchedule ──────────────────────────────────────────────────────────────
 class DoseSchedule(Base):
     __tablename__ = "api_doseschedule"
+
     id          = Column(Integer, primary_key=True, index=True)
     patient_id  = Column(Integer, ForeignKey("api_patient.id"), nullable=True)
     dose_name   = Column(String(50))
@@ -158,9 +163,11 @@ class DoseSchedule(Base):
     completed   = Column(Boolean, default=False)
     is_optional = Column(Boolean, default=False)
 
+
 # ── Registration ──────────────────────────────────────────────────────────────
 class Registration(Base):
     __tablename__ = "api_registration"
+
     id                = Column(Integer, primary_key=True, index=True)
     patient_id        = Column(Integer, ForeignKey("api_patient.id"), nullable=True)
     full_name         = Column(String(200))
