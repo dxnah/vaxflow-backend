@@ -4,21 +4,10 @@ from sqlalchemy.orm import Session
 from . import models, schemas
 from .database import engine, get_db
 
-# ── ML module ─────────────────────────────────────────────────────────────────
-import importlib.util, os, sys
-
-_ml_path = os.path.join(os.path.dirname(__file__), "ml_model.py")
-_spec    = importlib.util.spec_from_file_location("ml_model", _ml_path)
-_mod     = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_mod)
-ml_model = _mod.ml_model
-
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="VaxFlow API",
-    description="Anti-Rabies PEP Management System — CDO ABTC",
-    version="2.0.0",
 )
 
 app.add_middleware(
@@ -627,43 +616,3 @@ def delete_order(order_id: int, db: Session = Depends(get_db)):
     db.delete(order)
     db.commit()
     return {"message": "Order deleted"}
-
-
-# ── ML Forecasting ────────────────────────────────────────────────────────────
-@app.get(
-    "/api/ml/info/",
-    response_model=schemas.MLModelInfoResponse,
-    tags=["ML Forecasting"],
-    summary="ML model metadata",
-)
-def ml_info():
-    """
-    Returns metadata about the deployed ML dose forecasting model —
-    model type, features used, accuracy metrics, and dose estimation logic.
-    """
-    return schemas.MLModelInfoResponse(
-        model_type      = ml_model.meta.get("model_name", "RandomForestRegressor"),
-        target_variable = "doses_needed — estimated anti-rabies vaccine doses per month",
-        features        = ml_model.feature_cols,
-        mae_doses       = ml_model.meta.get("mae", 14.13),
-        dataset         = (
-            "Louisville Health_AnimalBites.csv aggregated to 90 monthly records (2010–2017). "
-            "Dose column engineered using WHO/DOH PEP protocol logic."
-        ),
-        dose_logic      = (
-            "Dog/Cat → 3 doses (Category II TCV), "
-            "Bat/Raccoon/Skunk → 5 doses (Category III TCV + RIG), "
-            "Other → 2 doses; +1 for head bites, +1 for positive/unknown rabies result."
-        ),
-    )
-
-
-@app.post(
-    "/api/ml/predict/",
-    response_model=schemas.MLPredictResponse,
-    tags=["ML Forecasting"],
-    summary="Forecast monthly vaccine doses needed",
-)
-def ml_predict(data: schemas.MLPredictRequest):
-    result = ml_model.predict(data)
-    return schemas.MLPredictResponse(**result)
