@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from . import models, schemas
 from .database import engine, get_db
+from .ml_forecast import router as forecast_router  
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -12,12 +13,16 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://vaxflow-backend.onrender.com/", 
+    ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+app.include_router(forecast_router)
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 @app.post("/api/login/")
