@@ -15,6 +15,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
+        "http://192.168.0.104:8000/api",
         "https://vaxflow-seven.vercel.app", 
     ],
     allow_credentials=False,
