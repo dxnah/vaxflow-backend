@@ -21,7 +21,7 @@ def _load_forecast():
     with open(_JSON_PATH, "r") as f:
         return json.load(f)
 
-_FORECAST_DATA = _load_forecast()   # cached at startup
+_FORECAST_DATA = _load_forecast()
 
 
 # ─── Helper ───────────────────────────────────────────────────────────────────
@@ -127,11 +127,4 @@ def get_model_metrics():
                 "trained_on":   payload.get("trained_on",  {}),
             }
     except Exception:
-        pass
-    # Hardcoded fallback from last run
-    return {
-        "model_name":  "Gradient Boosting",
-        "split_ratio": "70:15:15 chronological",
-        "test_metrics": {"MAE": 70.8, "RMSE": 83.0, "R2": 0.6929, "MAPE_pct": 3.87},
-        "trained_on":  {"years": "2011–2028", "samples": 216},
-    }
+            raise HTTPException(status_code=500, detail="Model file not found. Run the notebook first to generate vaxflow_arv_model.pkl.")
