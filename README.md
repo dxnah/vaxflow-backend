@@ -1,7 +1,20 @@
-# VaxFlow Backend API
+# VaxFlow — Vaccine Inventory & Patient Management System
 
-> **AppDev: IT3R9 – Group 6**
-> FastAPI backend for the VaxFlow Vaccine Management & Inventory System
+<p align="center">
+  <img src="src/images/logoit.png" alt="VaxFlow Logo" width="80"/>
+</p>
+
+<p align="center">
+  <b>A full-stack web application for managing anti-rabies vaccine inventory, patient records, demand forecasting, and health center operations.</b>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/FastAPI-0.136.0-009688?logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/SQLite-Database-003B57?logo=sqlite&logoColor=white" />
+  <img src="https://img.shields.io/badge/Deployed-Vercel-000000?logo=vercel&logoColor=white" />
+</p>
 
 ---
 
@@ -294,4 +307,11 @@ The backend is deployed on **Render**. A few things to note:
 
 ## Team
 
-**IT3R9 – Group 6**
+*IT323 — Application Development and Emerging Technologies*
+
+Built as a final project demonstrating full-stack development, REST API design, database modeling, and ML integration.
+
+
+---
+
+<p align="center">Made with 💉 by the VaxFlow Team</p>
