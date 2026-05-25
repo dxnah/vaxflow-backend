@@ -293,4 +293,8 @@ The backend is deployed on **Render**. A few things to note:
 
 ## Team
 
+<<<<<<< HEAD
 **IT3R9 – Group 6**
+=======
+**IT3R9 – Group 6**
+>>>>>>> cba9b9c05f1fbbf39839e7052217f1725f48188c
