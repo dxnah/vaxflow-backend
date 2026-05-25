@@ -90,6 +90,7 @@ packaging==26.2
 pandas==3.0.2
 pandocfilters==1.5.1
 parso==0.8.6
+passlib[bcrypt]==1.7.4
 pillow==12.2.0
 platformdirs==4.9.6
 prometheus_client==0.25.0

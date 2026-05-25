@@ -288,13 +288,10 @@ The backend is deployed on **Render**. A few things to note:
 ## Related Repository
 
 - **Frontend (React + React Router DOM):** [github.com/dxnah/VaxFlow](https://github.com/dxnah/VaxFlow)
+- **Frontend Mobile (React Native):** [github.com/dxnah/VaxFlowMobile](https://github.com/dxnah/VaxFlowMobile)
 
 ---
 
 ## Team
 
-<<<<<<< HEAD
 **IT3R9 – Group 6**
-=======
-**IT3R9 – Group 6**
->>>>>>> cba9b9c05f1fbbf39839e7052217f1725f48188c
