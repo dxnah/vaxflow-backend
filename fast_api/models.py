@@ -83,6 +83,7 @@ class AdminUser(Base):
     id           = Column(Integer, primary_key=True, index=True)
     username     = Column(String(150), unique=True)
     email        = Column(String(254))
+    password     = Column(String(128)) 
     is_staff     = Column(Boolean, default=False)
     is_superuser = Column(Boolean, default=False)
     last_login   = Column(DateTime, nullable=True)

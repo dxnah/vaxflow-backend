@@ -2,9 +2,17 @@ import json, os
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from pydantic import BaseModel, Field
 from typing import Optional
+
+from .auth import get_current_user
+
+router = APIRouter(
+    prefix="/api/ml",
+    tags=["ML Forecast"],
+    dependencies=[Depends(get_current_user)],  # add this
+)
 
 router = APIRouter(prefix="/api/ml", tags=["ML Forecast"])
 
