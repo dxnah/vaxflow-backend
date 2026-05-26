@@ -1,20 +1,23 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from . import models, schemas
 from .database import engine, get_db
-from .auth import create_access_token          # ← fixes the Pylance error
+from .auth import create_access_token
 from .ml_forecast import router as forecast_router
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="VaxFlow API")
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "http://192.168.0.104:8000/api",
+        "http://10.80.216.75:8001",
         "https://vaxflow-seven.vercel.app",
     ],
     allow_credentials=True,
@@ -27,15 +30,15 @@ app.include_router(forecast_router)
 # ── Auth ──────────────────────────────────────────────────────────────────────
 @app.post("/api/login/")
 def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
-    username = credentials.username
-    password = credentials.password
+    username = credentials.username.strip()
+    password = credentials.password.strip()
 
+    # ── Patient ───────────────────────────────────────────────────────────────
     patient = db.query(models.Patient).filter(
-        models.Patient.username == username,
-        models.Patient.password == password
+        models.Patient.username == username
     ).first()
 
-    if patient:
+    if patient and pwd_context.verify(password, patient.password):
         token = create_access_token({"sub": patient.username, "role": "patient", "id": patient.id})
         return {
             "message": "Login successful",
@@ -51,12 +54,13 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
             },
         }
 
+    # ── Admin ─────────────────────────────────────────────────────────────────
     admin = db.query(models.AdminUser).filter(
         models.AdminUser.username == username,
         models.AdminUser.is_staff == True
     ).first()
 
-    if admin:
+    if admin and pwd_context.verify(password, admin.password):
         token = create_access_token({"sub": admin.username, "role": "admin", "id": admin.id})
         return {
             "message": "Login successful",
@@ -75,11 +79,13 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
 @app.post("/api/signup/")
 def signup(patient: schemas.PatientCreate, db: Session = Depends(get_db)):
     existing = db.query(models.Patient).filter(
-        models.Patient.username == patient.username
+        models.Patient.username == patient.username.strip()
     ).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already taken")
-    new_patient = models.Patient(**patient.model_dump())
+    data = patient.model_dump()
+    data["password"] = pwd_context.hash(data["password"])
+    new_patient = models.Patient(**data)
     db.add(new_patient)
     db.commit()
     db.refresh(new_patient)
