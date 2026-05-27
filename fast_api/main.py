@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from . import models, schemas
 from .database import engine, get_db
-from .auth import create_access_token, create_refresh_token, decode_refresh_token
+# JWT token generation removed; auth now provides `require_admin` only
 from .ml_forecast import router as forecast_router
 
 models.Base.metadata.create_all(bind=engine)
@@ -35,12 +35,9 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
     ).first()
 
     if patient and pwd_context.verify(password, patient.password):
-        payload = {"sub": patient.username, "role": "patient", "id": patient.id}
         return {
             "message": "Login successful",
             "role": "patient",
-            "token":         create_access_token(payload),
-            "refresh_token": create_refresh_token(payload),
             "user": {
                 "id":       patient.id,
                 "username": patient.username,
@@ -58,12 +55,9 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
     ).first()
 
     if admin and pwd_context.verify(password, admin.password):
-        payload = {"sub": admin.username, "role": "admin", "id": admin.id}
         return {
             "message": "Login successful",
             "role": "admin",
-            "token":         create_access_token(payload),
-            "refresh_token": create_refresh_token(payload),
             "user": {
                 "id":       admin.id,
                 "username": admin.username,
@@ -74,14 +68,7 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
     raise HTTPException(status_code=401, detail="Invalid username or password")
 
 
-@app.post("/api/refresh/")
-def refresh(body: schemas.RefreshRequest):
-    payload = decode_refresh_token(body.refresh_token)
-    new_data = {"sub": payload["sub"], "role": payload["role"], "id": payload["id"]}
-    return {
-        "token":         create_access_token(new_data),
-        "refresh_token": create_refresh_token(new_data),
-    }
+# Token refresh endpoint removed (JWTs no longer used)
 
 
 @app.post("/api/signup/")
