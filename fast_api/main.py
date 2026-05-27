@@ -24,12 +24,12 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://vaxflow-seven.vercel.app",
+        "https://vaxflow-backend.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(forecast_router)
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
