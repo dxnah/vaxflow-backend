@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from passlib.context import CryptContext
+
 from sqlalchemy.orm import Session
 from . import models, schemas
 from .database import engine, get_db
@@ -11,7 +11,13 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="VaxFlow API")
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return bcrypt.checkpw(plain.encode(), hashed.encode())
+
+def hash_password(plain: str) -> str:
+    return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,7 +43,7 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
         models.Patient.username == username
     ).first()
 
-    if patient and pwd_context.verify(password[:72], patient.password):
+    if patient and verify_password(password, patient.password):
         token = create_access_token({"sub": patient.username, "role": "patient", "id": patient.id})
         return {
             "message": "Login successful",
@@ -59,7 +65,7 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
         models.AdminUser.is_staff == True
     ).first()
 
-    if admin and pwd_context.verify(password[:72], admin.password):
+    if admin and verify_password(password, admin.password):
         token = create_access_token({"sub": admin.username, "role": "admin", "id": admin.id})
         return {
             "message": "Login successful",
@@ -83,7 +89,7 @@ def signup(patient: schemas.PatientCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Username already taken")
     data = patient.model_dump()
-    data["password"] = pwd_context.hash(data["password"])
+    data["password"] = hash_password(data["password"])
     new_patient = models.Patient(**data)
     db.add(new_patient)
     db.commit()
