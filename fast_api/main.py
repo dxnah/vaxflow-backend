@@ -4,7 +4,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from . import models, schemas
 from .database import engine, get_db
-# JWT token generation removed; auth now provides `require_admin` only
+from .auth import create_access_token
 from .ml_forecast import router as forecast_router
 
 models.Base.metadata.create_all(bind=engine)
@@ -15,7 +15,10 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://vaxflow-seven.vercel.app/"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://vaxflow-seven.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,9 +38,11 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
     ).first()
 
     if patient and pwd_context.verify(password, patient.password):
+        token = create_access_token({"sub": patient.username, "role": "patient", "id": patient.id})
         return {
             "message": "Login successful",
             "role": "patient",
+            "token": token,
             "user": {
                 "id":       patient.id,
                 "username": patient.username,
@@ -55,9 +60,11 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
     ).first()
 
     if admin and pwd_context.verify(password, admin.password):
+        token = create_access_token({"sub": admin.username, "role": "admin", "id": admin.id})
         return {
             "message": "Login successful",
             "role": "admin",
+            "token": token,
             "user": {
                 "id":       admin.id,
                 "username": admin.username,
@@ -66,9 +73,6 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
         }
 
     raise HTTPException(status_code=401, detail="Invalid username or password")
-
-
-# Token refresh endpoint removed (JWTs no longer used)
 
 
 @app.post("/api/signup/")

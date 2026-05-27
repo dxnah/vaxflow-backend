@@ -1,20 +1,73 @@
-from fastapi import HTTPException, Header
+from datetime import datetime, timedelta
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 
-# JWT tokens removed. Replace admin check with a simple header-based secret.
-# Set the environment variable `ADMIN_SECRET` to enable admin protection.
+SECRET_KEY = os.getenv("SECRET_KEY", "vaxflow-secret-key-change-in-production")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
-ADMIN_SECRET = os.getenv("ADMIN_SECRET")
-
-
-def get_current_user() -> dict:
-    # No token-based authentication in this simplified setup.
-    return {}
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
-def require_admin(x_admin_secret: str | None = Header(None)) -> dict:
-    if ADMIN_SECRET:
-        if x_admin_secret != ADMIN_SECRET:
+def create_access_token(data: dict) -> str:
+    payload = data.copy()
+    payload["type"] = "access"
+    payload["exp"] = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_token(token: str) -> dict:
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
+
+
+def create_refresh_token(data: dict) -> str:
+    payload = {
+        "sub": data.get("sub"),
+        "role": data.get("role"),
+        "id": data.get("id"),
+        "type": "refresh",
+        "exp": datetime.utcnow() + timedelta(days=7),
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_refresh_token(token: str) -> dict:
+    payload = decode_token(token)
+    if payload.get("type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Expected a refresh token",
+        )
+    return payload
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> dict:
+    if not credentials:
+        return {}
+    return decode_token(credentials.credentials)
+
+
+def require_admin(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> dict:
+    if not credentials:
+        admin_secret = os.getenv("ADMIN_SECRET")
+        if admin_secret:
             raise HTTPException(status_code=403, detail="Admin access required")
-    # When no ADMIN_SECRET is configured, allow for local/dev usage.
-    return {"role": "admin"}
+        return {"role": "admin"}
+    user = decode_token(credentials.credentials)
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
