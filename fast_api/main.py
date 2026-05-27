@@ -37,7 +37,7 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
         models.Patient.username == username
     ).first()
 
-    if patient and pwd_context.verify(password, patient.password):
+    if patient and pwd_context.verify(password[:72], patient.password):
         token = create_access_token({"sub": patient.username, "role": "patient", "id": patient.id})
         return {
             "message": "Login successful",
@@ -59,7 +59,7 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
         models.AdminUser.is_staff == True
     ).first()
 
-    if admin and pwd_context.verify(password, admin.password):
+    if admin and pwd_context.verify(password[:72], admin.password):
         token = create_access_token({"sub": admin.username, "role": "admin", "id": admin.id})
         return {
             "message": "Login successful",
